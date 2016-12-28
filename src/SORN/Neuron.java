@@ -7,6 +7,8 @@ import java.util.Random;
  * that they only have information about their current state.
  *
  * TODO: Implement a "driving force" that can fix some inputs of some neurons.
+ *
+ * Author: sss1@andrew.cmu.edu
  */
 class Neuron {
 
@@ -21,7 +23,7 @@ class Neuron {
   private static final double SIGMA2_MAX = 0.05; // Max of uniform dist of sigma^2
   // Max of uniform dist of initial firingThreshold
   private static final double FIRING_THRESHOLD_INITIAL_MAX = 1.0;
-  private static final double TARGET_L1_NORM = 1.0; // Target L1 norm for synaptic normalization
+  private static final double TARGET_L1_NORM = 0.1; // Target L1 norm for synaptic normalization
   private static final double STRUCTURAL_CONNECTION_PROBABILITY = 0.1; // Prob. of new connections
   private static final double NEW_STRUCTURAL_CONNECTION_WEIGHT = 0.001; // Strength of new connections
 
@@ -85,17 +87,18 @@ class Neuron {
         weightsIn[neuronIdx] += ETA_STDP; // Additive increase
       }
       if (firedPreviously[ID] && firedNow[neuronIdx]) {
-        weightsIn[neuronIdx] -= ETA_STDP; // Additive decrease
+        // Additive decrease, with minimum value 0.0
+        weightsIn[neuronIdx] = Math.max(weightsIn[neuronIdx] - ETA_STDP, 0.0);
       }
     }
   }
 
   /**
    * Normalizes the weight vector of the neuron to have L1 norm TARGET_L1_NORM.
-   * Normalizes the weight vector of the neuron to have L1 norm TARGET_L1_NORM.
    */
   void synapticNormalization() {
-    weightsIn = Util.normalizeWeightsInL1(weightsIn, TARGET_L1_NORM);
+//    weightsIn = Util.normalizeWeightsInL1(weightsIn, TARGET_L1_NORM);
+    Util.projectWeightsInL1(weightsIn, TARGET_L1_NORM);
   }
 
   /**
@@ -120,6 +123,14 @@ class Neuron {
         weightsIn[neuronIdx] = (rand.nextDouble() > STRUCTURAL_CONNECTION_PROBABILITY) ? 0.0 : NEW_STRUCTURAL_CONNECTION_WEIGHT;
       }
     }
+  }
+
+  int numInputs() {
+    int numInputs = 0;
+    for (double weight : weightsIn) {
+      numInputs += (weight > 0.0) ? 1 : 0;
+    }
+    return numInputs;
   }
 
 }
