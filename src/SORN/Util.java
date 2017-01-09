@@ -1,6 +1,7 @@
 package SORN;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 
 /**
@@ -12,12 +13,25 @@ class Util {
 
   /**
    * Returns the sum of the (double) numbers in the input array.
-   * @param array numbers to be summed
+   * @param list numbers to be summed
    * @return sum of numbers in array
    */
-  private static double sum(double[] array) {
+  private static double sum(double[] list) {
     double sum = 0.0;
-    for (double weight : array) {
+    for (double weight : list) {
+      sum += weight;
+    }
+    return sum;
+  }
+
+  /**
+   * Returns the sum of the (double) numbers in the input collection.
+   * @param list numbers to be summed
+   * @return sum of numbers in array
+   */
+  private static double sum(Collection<Double> list) {
+    double sum = 0.0;
+    for (double weight : list) {
       sum += weight;
     }
     return sum;
@@ -28,8 +42,62 @@ class Util {
    * @param array numbers to be averaged
    * @return mean of numbers in array
    */
-  static double mean(double[] array) {
-    return sum(array) / array.length;
+  static double mean(Collection<Double> array) {
+    return sum(array) / array.size();
+  }
+
+  /**
+   * @param M rectangular matrix to transpose
+   * @return transpose of M
+   */
+  static boolean[][] transpose(boolean[][] M) {
+    if (M.length < 1 || M[0].length < 0) {
+      throw new IllegalArgumentException("Input matrix must not be empty.");
+    }
+    int height = M.length;
+    int width = M[0].length;
+    boolean[][] M2 = new boolean[width][height];
+    for (int i = 0; i < height; i++) {
+      for (int j = 0; j < width; j++) {
+        M2[j][i] = M[i][j];
+      }
+    }
+    return M2;
+  }
+
+  /**
+   * @param M rectangular matrix to transpose
+   * @return transpose of M
+   */
+  static double[][] transpose(double[][] M) {
+    if (M.length < 1 || M[0].length < 0) {
+      throw new IllegalArgumentException("Input matrix must not be empty.");
+    }
+    int height = M.length;
+    int width = M[0].length;
+    double[][] M2 = new double[width][height];
+    for (int i = 0; i < height; i++) {
+      for (int j = 0; j < width; j++) {
+        M2[j][i] = M[i][j];
+      }
+    }
+    return M2;
+  }
+
+  static double fracPositive(Collection<Double> list) {
+    int numPositive = 0;
+    for (double x : list) {
+      numPositive += (x > 0.0) ? 1 : 0;
+    }
+    return ((double) numPositive) / list.size();
+  }
+
+  static double fracPositive(double[] list) {
+    int numPositive = 0;
+    for (double x : list) {
+      numPositive += (x > 0.0) ? 1 : 0;
+    }
+    return ((double) numPositive) / list.length;
   }
 
   static double fracTrue(boolean[] array) {

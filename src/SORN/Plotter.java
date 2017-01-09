@@ -33,16 +33,21 @@ class Plotter extends ApplicationFrame {
     this.simDuration = simDuration;
   }
 
-  // TODO: Replace XIntervalSeriesCollection code with YIntervalSeriesCollection code
-
   void plotMultiple(ArrayList<YIntervalSeriesCollection> allSeries, String plotFilePath) {
     final NumberAxis domainAxis = new NumberAxis("Time");
-    final ValueAxis rangeAxis = new NumberAxis("Fraction of Agents");
+    final ValueAxis rangeAxis = new NumberAxis("Firing Rate");
+
+    if (allSeries.size() < 1) {
+      throw new IllegalArgumentException("allSeries contains no series to plot.");
+    }
+    // Plot first series
     final XYErrorRenderer renderer0 = new XYErrorRenderer();
-    renderer0.setSeriesStroke(0, new BasicStroke(1.0f));
-    renderer0.setSeriesLinesVisible(0, true);
-    renderer0.setSeriesShapesVisible(0, false);
+    renderer0.setSeriesStroke(0, new BasicStroke(0.1f));
+    renderer0.setSeriesLinesVisible(0, false);
+    renderer0.setSeriesShapesVisible(0, true);
     XYPlot plot = new XYPlot(allSeries.get(0), domainAxis, rangeAxis, renderer0);
+
+    // Add other series, if there is more than one series in allSeries
     for (int i = 1; i < allSeries.size(); i++) {
       plot.setDataset(i, allSeries.get(i));
       final XYErrorRenderer renderer = new XYErrorRenderer();
@@ -61,7 +66,8 @@ class Plotter extends ApplicationFrame {
 
     NumberAxis range = (NumberAxis) plot.getRangeAxis();
     range.setTickUnit(new NumberTickUnit(0.1));
-    range.setRange(-0.02, 1.02);
+//    range.setRange(-0.02, 1.02);
+    range.setRange(0.0, simDuration);
 
     final JFreeChart chart = new JFreeChart("Fraction of Agents in Room over Time", JFreeChart.DEFAULT_TITLE_FONT, plot, true);
     final ChartPanel panel = new ChartPanel(chart, true, true, true, true, true);

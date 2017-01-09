@@ -13,23 +13,28 @@ import java.util.Random;
  */
 public class Sim {
 
-  private static final int numTrials = 10; // Number of IID trials to run
-  private static final int numNeurons = 200; // Number of neurons
-  private static final int duration = 1000; // Number of time steps to simulate
+  private static final int numTrials = 1; // Number of IID trials to run
+  private static final int numNeurons = 20; // Number of neurons
+  private static final int duration = 3000; // Number of time steps to simulate
 
   // Parameters specifying where and what the simulation should output
+  private static final boolean makePlot = true;
+  private static final boolean makeMATFile = false;
   private static final String plotFilePath = "/home/painkiller/Desktop/SORN/basic_" + numNeurons + "neurons_" + duration + "timesteps.png";
+  private static final String MATFilePath = "/home/painkiller/Desktop/SORN/results.mat";
 
   public static void main(String[] args) {
 
-    Plotter plotter = new Plotter("Network density over time.", duration);
+    Plotter plotter = new Plotter("Network density over time.", 0.05);
     ArrayList<YIntervalSeriesCollection> averagedResultsByExperiment = new ArrayList<>();
 
     // Run trials of particular experiment type
     String experimentLabel = "Basic";
     averagedResultsByExperiment.add(runTrials(experimentLabel));
 
-    plotter.plotMultiple(averagedResultsByExperiment, plotFilePath);
+    if (makePlot) {
+      plotter.plotMultiple(averagedResultsByExperiment, plotFilePath);
+    }
 
   }
 
@@ -43,7 +48,6 @@ public class Sim {
     return Plotter.averageTrials(resultsByTrial, label);
   }
 
-
   /**
    * Runs a single self-contained simulation and outputs some results of interest
    *
@@ -52,7 +56,7 @@ public class Sim {
    */
   private static XYSeries runTrial() {
 
-    // (for s < t), fired[s][i] is true if and only if neuron i fired at time s
+    // for s < t, fired[s][i] is true if and only if neuron i fired at time s
     boolean[][] fired = new boolean[duration][numNeurons];
     Neuron[] neurons = new Neuron[numNeurons];
 
@@ -65,28 +69,54 @@ public class Sim {
     }
 
     XYSeries output = new XYSeries("Stuff over time");
+    double[][][] weights = new double[duration][numNeurons][numNeurons];
 
     for (int t = 0; t < duration - 1; t++) {
+      if (t % 500 == 0) System.out.println("t:" + t);
       for (int neuronIdx = 0; neuronIdx < numNeurons; neuronIdx++) {
-        fired[t + 1][neuronIdx] = neurons[neuronIdx].shouldFire(fired[t]); // Fire neuron
+        if (false) { // (neuronIdx < 0.1 * numNeurons) { // The first 10% of neurons always fire
+          fired[t + 1][neuronIdx] = true;
+        } else {
+          fired[t + 1][neuronIdx] = neurons[neuronIdx].shouldFire(fired[t]); // Fire neuron
+        }
       }
+
       for (int neuronIdx = 0; neuronIdx < numNeurons; neuronIdx++) {
-        // Apply each update rule, based on current firing patterns
+        // Apply each update rule, based on current and previous firing patterns
         neurons[neuronIdx].excitatorySTDP(fired[t], fired[t + 1]);
         neurons[neuronIdx].synapticNormalization();
         neurons[neuronIdx].intrisicPlasticity(fired[t + 1][neuronIdx]);
         neurons[neuronIdx].structuralPlasticity();
       }
-      if (t > 3 && t % 20 == 0) { // First few time steps are anomalous
-        output.add(t, Util.fracTrue(fired[t]));
-      }
+
     }
 
-//    double[] numInputs = new double[numNeurons];
-//    for (int neuronIdx = 0; neuronIdx < numNeurons; neuronIdx++) {
-//      numInputs[neuronIdx] = neurons[neuronIdx].numInputs();
-//    }
-//    System.out.println("Average final number of inputs per neuron: " + Util.mean(numInputs));
+    int numZeroPairs = 0;
+    int numPartZeroPairs = 0;
+    int numTotalPairs = 0;
+    for (int destNeuronIdx = 0; destNeuronIdx < numNeurons; destNeuronIdx++) {
+      for (int sourceNeuronIdx = 0; sourceNeuronIdx < destNeuronIdx; sourceNeuronIdx++) {
+        output.add(neurons[destNeuronIdx].getWeightIn(sourceNeuronIdx), neurons[sourceNeuronIdx].getWeightIn(destNeuronIdx));
+        numTotalPairs++;
+        if (neurons[destNeuronIdx].getWeightIn(sourceNeuronIdx) < Double.MIN_VALUE || neurons[sourceNeuronIdx].getWeightIn(destNeuronIdx) < Double.MIN_VALUE) {
+          numPartZeroPairs++;
+        }
+        if (neurons[destNeuronIdx].getWeightIn(sourceNeuronIdx) < Double.MIN_VALUE && neurons[sourceNeuronIdx].getWeightIn(destNeuronIdx) < Double.MIN_VALUE) {
+          numZeroPairs++;
+        }
+      }
+      weights[duration - 1][destNeuronIdx] = neurons[destNeuronIdx].getWeightsIn();
+    }
+    System.out.println("Fraction of edges that are zero in both directions: " + ((double) numZeroPairs) / numTotalPairs);
+    System.out.println("Fraction of pairs that are connected in at least one direction: " + ((double) (numTotalPairs - numZeroPairs)) / numTotalPairs);
+    System.out.println("Fraction of pairs that are zero in at least one direction: " + ((double) numPartZeroPairs) / numTotalPairs);
+    System.out.println("Fraction of pairs that are connected in both directions: " + ((double) (numTotalPairs - numPartZeroPairs)) / numTotalPairs);
+
+    if (makeMATFile) { // output simulation results to .mat file
+      MatPlotter matPlotter = new MatPlotter();
+      matPlotter.writeToMAT(MATFilePath, fired, weights, numNeurons, duration);
+    }
+    // TODO: Look at correlation between W_{i.j} and W_{j,i}
 
     return output;
 
