@@ -7,7 +7,8 @@ import java.util.Random;
  * that they only have information about their current state.
  *
  * TODO:
- *   1) Find a way to measure periodicity of of a neuron's firing
+ *   1) Find a way to measure periodicity of of a neuron's firing.
+ *      - One option might be trace(A^k), where A is the adjacency matrix of the network
  *   2) Implement a "driving force" that can fix some inputs of some neurons.
  *
  * Author: sss1@andrew.cmu.edu
@@ -23,11 +24,12 @@ class Neuron {
   private static final double WEIGHT_INITIAL_MAX = 1.0; // Max of uniform dist of initial weights
   private static final double SIGMA2_MIN = 0.01; // Min of uniform dist of sigma^2
   private static final double SIGMA2_MAX = 0.05; // Max of uniform dist of sigma^2
-  // Max of uniform dist of initial firingThreshold
-  private static final double FIRING_THRESHOLD_INITIAL_MAX = 1.0;
+  private static final double FIRING_THRESHOLD_INITIAL_MAX = 1.0; // Max of uniform dist of initial firingThreshold
   private static final double TARGET_L1_NORM = 0.05; // Target L1 norm for synaptic normalization
   private static final double STRUCTURAL_CONNECTION_PROBABILITY = 0.1; // Prob. of new connections
   private static final double NEW_STRUCTURAL_CONNECTION_WEIGHT = 0.001; // Strength of new connections
+  private static final int MEMORY = 2; // Number of timesteps back that neurons remember (for STDP)
+  private static final double DECAY_RATE = 0.5; // Fraction by which STDP effects decay with each timestep
 
   // Neuron-specific fixed parameters
   private final int ID; // Unique identifier for this neuron
@@ -74,6 +76,29 @@ class Neuron {
       }
     }
     return weightedSum + sigma * rand.nextGaussian() > firingThreshold;
+  }
+
+  /**
+   * Updates this neuron's input weights according to excitatory STDP rules, using firing activity
+   * from the current and previous time steps
+   *
+   * @param fired for s <= t, fired[s][i] is true if and only if neuron i fired at time s
+   * @param t last time step at which fired was updated
+   */
+  void excitatorySTDP(boolean[][] fired, int t) {
+    for (int delay = 1; delay <= MEMORY; delay++) {
+      double additiveDelta = ETA_STDP * Math.pow(DECAY_RATE, delay - 1);
+      for (int neuronIdx = 0; neuronIdx < numNeurons; neuronIdx++) {
+        if (neuronIdx == ID) { continue; } // No self-loops
+        if (fired[t][ID] && fired[t - delay][neuronIdx]) {
+          weightsIn[neuronIdx] += additiveDelta; // Additive increase
+        }
+        if (fired[t - delay][ID] && fired[t][neuronIdx]) {
+          // Additive decrease, with minimum value 0.0
+          weightsIn[neuronIdx] = Math.max(weightsIn[neuronIdx] - additiveDelta, 0.0);
+        }
+      }
+    }
   }
 
   /**
