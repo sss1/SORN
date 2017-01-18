@@ -28,7 +28,7 @@ class Neuron {
   private static final double TARGET_L1_NORM = 0.05; // Target L1 norm for synaptic normalization
   private static final double STRUCTURAL_CONNECTION_PROBABILITY = 0.1; // Prob. of new connections
   private static final double NEW_STRUCTURAL_CONNECTION_WEIGHT = 0.001; // Strength of new connections
-  private static final int MEMORY = 2; // Number of timesteps back that neurons remember (for STDP)
+  private static final int MEMORY = 1; // Number of timesteps back that neurons remember (for STDP)
   private static final double DECAY_RATE = 0.5; // Fraction by which STDP effects decay with each timestep
 
   // Neuron-specific fixed parameters

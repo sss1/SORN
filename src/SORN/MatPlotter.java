@@ -37,8 +37,8 @@ class MatPlotter {
         }
       }
     }
-    variableList.add(new MLDouble(name, flattened, 1));
-    variableList.add(new MLInt32(name + "_dims", dims));
+    variableList.add(new MLDouble(name, flattened, 1)); // TODO: This line is exploding, for some reason!
+    variableList.add(new MLInt32(name + "_dims", new int[][]{ dims }));
   }
 
   private static double[][] booleanMatrixToDoubleMatrix(boolean[][] matrix) {
@@ -58,6 +58,7 @@ class MatPlotter {
     // reformat the positions to two numTimeSteps X numAgents double arrays, one each for x and y coordinates
     variableList.add(new MLDouble("fired", booleanMatrixToDoubleMatrix(fired)));
     add3DDoubleArray("weights", weights);
+
     variableList.add(new MLInt32("numNeurons", new int[]{numNeurons}, 1));
     variableList.add(new MLInt32("duration", new int[]{duration}, 1));
 
