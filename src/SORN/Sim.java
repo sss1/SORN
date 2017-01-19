@@ -15,13 +15,13 @@ public class Sim {
 
   private static final int numTrials = 1; // Number of IID trials to run
   private static final int numNeurons = 200; // Number of neurons
-  private static final int duration = 100; // Number of time steps to simulate
+  private static final int duration = 1000; // Number of time steps to simulate
 
   // Parameters specifying where and what the simulation should output
   private static final boolean makePlot = true;
   private static final boolean makeMATFile = true;
   private static final String plotFilePath = "/home/sss1/Desktop/SORN/basic_" + numNeurons + "neurons_" + duration + "timesteps.png";
-  private static final String MATFilePath = "/home/sss1/Desktop/SORN/results.mat";
+  private static final String MATFilePath = "/home/sss1/Desktop/SORN/resultsMemory" + Neuron.MEMORY + ".mat";
 
   public static void main(String[] args) {
 
@@ -77,11 +77,11 @@ public class Sim {
     for (int t = 0; t < duration - 1; t++) {
       if (t % 500 == 0) System.out.println("t: " + t);
       for (int neuronIdx = 0; neuronIdx < numNeurons; neuronIdx++) {
-        if (false) { // (neuronIdx < 0.1 * numNeurons) { // The first 10% of neurons always fire
-          fired[t + 1][neuronIdx] = true;
-        } else {
+//        if (false) { // (neuronIdx < 0.1 * numNeurons) { // The first 10% of neurons always fire
+//          fired[t + 1][neuronIdx] = true;
+//        } else {
           fired[t + 1][neuronIdx] = neurons[neuronIdx].shouldFire(fired[t]); // Fire neuron
-        }
+//        }
       }
 
       for (int neuronIdx = 0; neuronIdx < numNeurons; neuronIdx++) {
@@ -90,7 +90,9 @@ public class Sim {
         neurons[neuronIdx].synapticNormalization();
         neurons[neuronIdx].intrisicPlasticity(fired[t + 1][neuronIdx]);
         neurons[neuronIdx].structuralPlasticity();
-        weights[t + 1][neuronIdx] = neurons[neuronIdx].getWeightsIn();
+        for (int i = 0; i < numNeurons; i++) {
+          weights[t + 1][neuronIdx][i] = neurons[neuronIdx].getWeightIn(i);
+        }
       }
 
     }

@@ -28,8 +28,8 @@ class Neuron {
   private static final double TARGET_L1_NORM = 0.05; // Target L1 norm for synaptic normalization
   private static final double STRUCTURAL_CONNECTION_PROBABILITY = 0.1; // Prob. of new connections
   private static final double NEW_STRUCTURAL_CONNECTION_WEIGHT = 0.001; // Strength of new connections
-  private static final int MEMORY = 1; // Number of timesteps back that neurons remember (for STDP)
-  private static final double DECAY_RATE = 0.5; // Fraction by which STDP effects decay with each timestep
+  static final int MEMORY = 10; // Number of time steps back that neurons remember (for STDP)
+  private static final double DECAY_RATE = 0.9; // Fraction by which STDP effects decay with each time step
 
   // Neuron-specific fixed parameters
   private final int ID; // Unique identifier for this neuron
@@ -86,12 +86,13 @@ class Neuron {
    * @param t last time step at which fired was updated
    */
   void excitatorySTDP(boolean[][] fired, int t) {
-    for (int delay = 1; delay <= MEMORY; delay++) {
+    for (int delay = 1; delay <= Math.min(MEMORY, t); delay++) {
       double additiveDelta = ETA_STDP * Math.pow(DECAY_RATE, delay - 1);
       for (int neuronIdx = 0; neuronIdx < numNeurons; neuronIdx++) {
         if (neuronIdx == ID) { continue; } // No self-loops
         if (fired[t][ID] && fired[t - delay][neuronIdx]) {
           weightsIn[neuronIdx] += additiveDelta; // Additive increase
+//          System.out.println("Increasing weight from " + neuronIdx + " to " + ID + " by " + additiveDelta + " at time " + t + ".");
         }
         if (fired[t - delay][ID] && fired[t][neuronIdx]) {
           // Additive decrease, with minimum value 0.0
@@ -109,9 +110,12 @@ class Neuron {
    *                        time step
    * @param firedNow firedNow[i] true if and only if neuron i fired in the current time step
    */
+  @SuppressWarnings("unused")
   void excitatorySTDP(boolean[] firedPreviously, boolean[] firedNow) {
     for (int neuronIdx = 0; neuronIdx < numNeurons; neuronIdx++) {
-      if (neuronIdx == ID) { continue; } // No self-loops
+
+      if (weightsIn[neuronIdx] < Double.MIN_VALUE) continue; // STDP only occurs between connected neurons
+
       if (firedPreviously[neuronIdx] && firedNow[ID]) {
         weightsIn[neuronIdx] += ETA_STDP; // Additive increase
       }
