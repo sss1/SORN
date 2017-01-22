@@ -8,6 +8,7 @@ clear;
 
 mems = [0:4 10];
 path_lengths = [2];
+trials = 1:10;
 figure; hold all;
 for mem_idx = 1:length(mems)
   mem = mems(mem_idx);
